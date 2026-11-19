@@ -1,5 +1,6 @@
 package com.maestro.ui.library
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,16 +23,24 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.maestro.data.Library
 import com.maestro.model.Album
 import com.maestro.model.Track
 import com.maestro.ui.components.ArtworkImage
+import com.maestro.ui.components.artworkPalette
 import com.maestro.ui.components.formatLongDuration
 import com.maestro.ui.components.pressable
 import com.maestro.ui.theme.Maestro
@@ -48,6 +57,21 @@ class LibraryActions(
 
 private val GutterNarrow = 16.dp
 private val GutterWide = 28.dp
+
+/** Lists and detail pages stop growing here so rows stay scannable on wide windows. */
+private val ReadableWidth = 880.dp
+
+/** Side padding for a list: gutter on the start edge, and on wide windows enough end padding to cap the width. */
+private fun listPadding(available: Dp, gutter: Dp, padding: PaddingValues): PaddingValues {
+    val start = gutter - 8.dp
+    val end = maxOf(gutter - 8.dp, available - start - ReadableWidth)
+    return PaddingValues(
+        start = start,
+        end = end,
+        top = padding.calculateTopPadding(),
+        bottom = padding.calculateBottomPadding() + 16.dp,
+    )
+}
 
 @Composable
 fun AlbumsScreen(library: Library, actions: LibraryActions, padding: PaddingValues, wide: Boolean) {
@@ -114,34 +138,32 @@ private fun AlbumCard(album: Album, showArtist: Boolean, onClick: () -> Unit) {
 @Composable
 fun ArtistsScreen(library: Library, actions: LibraryActions, padding: PaddingValues, wide: Boolean) {
     val gutter = if (wide) GutterWide else GutterNarrow
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = gutter - 8.dp,
-            end = gutter - 8.dp,
-            top = padding.calculateTopPadding(),
-            bottom = padding.calculateBottomPadding() + 16.dp,
-        ),
-    ) {
-        item { ScreenTitle("Artists", Modifier.padding(start = 8.dp)) }
-        items(library.artists, key = { it.name }) { artist ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .pressable({ actions.openArtist(artist.name) }, pressedScale = 0.985f, highlight = Maestro.colors.hairline)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ArtworkImage(artist.albums.first().artwork, Modifier.size(52.dp), shape = CircleArt)
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text(artist.name, style = Maestro.type.headline, color = Maestro.colors.textPrimary)
-                    val albums = artist.albums.size
-                    Text(
-                        "$albums ${if (albums == 1) "album" else "albums"} · ${artist.trackCount} songs",
-                        style = Maestro.type.caption,
-                        color = Maestro.colors.textSecondary,
-                    )
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = listPadding(maxWidth, gutter, padding),
+        ) {
+            item { ScreenTitle("Artists", Modifier.padding(start = 8.dp)) }
+            items(library.artists, key = { it.name }) { artist ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(Radius.medium)
+                        .pressable({ actions.openArtist(artist.name) }, pressedScale = 0.985f, highlight = Maestro.colors.hairline, shape = Radius.medium)
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ArtworkImage(artist.albums.first().artwork, Modifier.size(52.dp), shape = CircleArt)
+                    Spacer(Modifier.width(14.dp))
+                    Column {
+                        Text(artist.name, style = Maestro.type.headline, color = Maestro.colors.textPrimary)
+                        val albums = artist.albums.size
+                        Text(
+                            "$albums ${if (albums == 1) "album" else "albums"} · ${artist.trackCount} songs",
+                            style = Maestro.type.caption,
+                            color = Maestro.colors.textSecondary,
+                        )
+                    }
                 }
             }
         }
@@ -158,28 +180,25 @@ fun SongsScreen(
 ) {
     val gutter = if (wide) GutterWide else GutterNarrow
     val tracks = library.tracks
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = gutter - 8.dp,
-            end = gutter - 8.dp,
-            top = padding.calculateTopPadding(),
-            bottom = padding.calculateBottomPadding() + 16.dp,
-        ),
-    ) {
-        item {
-            Column(Modifier.padding(horizontal = 8.dp)) {
-                ScreenTitle("Songs")
-                PlayShuffleRow(
-                    onPlay = { actions.play(tracks, 0) },
-                    onShuffle = { actions.shuffle(tracks) },
-                    modifier = Modifier.widthIn(max = 420.dp),
-                )
-                Spacer(Modifier.height(12.dp))
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = listPadding(maxWidth, gutter, padding),
+        ) {
+            item {
+                Column(Modifier.padding(horizontal = 8.dp)) {
+                    ScreenTitle("Songs")
+                    PlayShuffleRow(
+                        onPlay = { actions.play(tracks, 0) },
+                        onShuffle = { actions.shuffle(tracks) },
+                        modifier = Modifier.widthIn(max = 420.dp),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
             }
-        }
-        itemsIndexed(tracks, key = { _, t -> t.id }) { index, track ->
-            TrackRow(track, nowPlaying, onClick = { actions.play(tracks, index) })
+            itemsIndexed(tracks, key = { _, t -> t.id }) { index, track ->
+                TrackRow(track, nowPlaying, onClick = { actions.play(tracks, index) })
+            }
         }
     }
 }
@@ -193,16 +212,31 @@ fun AlbumDetailScreen(
     wide: Boolean,
 ) {
     val gutter = if (wide) GutterWide else GutterNarrow
+    val listState = rememberLazyListState()
+    val palette = artworkPalette(album.artwork)
+    val wash = palette.primary.copy(alpha = if (Maestro.colors.isDark) 0.30f else 0.20f)
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val sideBySide = maxWidth >= 640.dp
+        val washHeight = padding.calculateTopPadding() + if (sideBySide) 340.dp else 560.dp
+        // The cover's color washes down behind the header and scrolls away with it,
+        // the same language as Now Playing, so the album and its player feel like one object.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(washHeight)
+                .graphicsLayer {
+                    translationY = if (listState.firstVisibleItemIndex == 0) {
+                        -listState.firstVisibleItemScrollOffset.toFloat()
+                    } else {
+                        -size.height
+                    }
+                }
+                .background(Brush.verticalGradient(0f to wash, 0.55f to wash.copy(alpha = wash.alpha * 0.5f), 1f to wash.copy(alpha = 0f))),
+        )
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = gutter - 8.dp,
-                end = gutter - 8.dp,
-                top = padding.calculateTopPadding(),
-                bottom = padding.calculateBottomPadding() + 16.dp,
-            ),
+            state = listState,
+            contentPadding = listPadding(maxWidth, gutter, padding),
         ) {
             item {
                 Column(Modifier.padding(horizontal = 8.dp)) {
@@ -263,10 +297,13 @@ private fun AlbumHeaderText(album: Album, actions: LibraryActions, modifier: Mod
             Text("$it", style = Maestro.type.caption, color = Maestro.colors.textSecondary)
         }
         Spacer(Modifier.height(16.dp))
+        // Play is the album's own color (filled); Shuffle stays tonal.
         PlayShuffleRow(
             onPlay = { actions.play(album.tracks, 0) },
             onShuffle = { actions.shuffle(album.tracks) },
             modifier = Modifier.widthIn(max = 420.dp),
+            playContainer = lerp(artworkPalette(album.artwork).primary, Color.Black, 0.28f),
+            playContent = Color.White,
         )
     }
 }

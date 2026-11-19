@@ -58,40 +58,52 @@ fun ScreenTitle(title: String, modifier: Modifier = Modifier) {
 @Composable
 fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ControlButton(
-        MaestroIcons.ChevronLeft,
+        MaestroIcons.ArrowBack,
         contentDescription = "Back",
         onClick = onBack,
-        modifier = modifier.padding(top = 4.dp).offset(x = (-10).dp),
-        tint = Maestro.colors.accent,
+        modifier = modifier.padding(top = 4.dp).offset(x = (-12).dp),
+        tint = Maestro.colors.textPrimary,
     )
 }
 
+/**
+ * A 48dp action button. Tonal by default; pass [container]/[content] for the
+ * filled primary action (Material's filled + tonal pairing).
+ */
 @Composable
 fun PillButton(
     label: String,
     icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    container: Color = Maestro.colors.surfaceRaised,
+    content: Color = Maestro.colors.accent,
 ) {
     Row(
         modifier
-            .height(44.dp)
+            .height(48.dp)
             .clip(Radius.medium)
-            .background(Maestro.colors.surfaceRaised)
-            .pressable(onClick, pressedScale = 0.96f, highlight = Maestro.colors.hairline),
+            .background(container)
+            .pressable(onClick, pressedScale = 0.96f, highlight = Maestro.colors.hairline, shape = Radius.medium),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, Modifier.size(18.dp), tint = Maestro.colors.accent)
+        Icon(icon, null, Modifier.size(18.dp), tint = content)
         Spacer(Modifier.width(8.dp))
-        Text(label, style = Maestro.type.headline, color = Maestro.colors.accent)
+        Text(label, style = Maestro.type.headline, color = content)
     }
 }
 
 @Composable
-fun PlayShuffleRow(onPlay: () -> Unit, onShuffle: () -> Unit, modifier: Modifier = Modifier) {
+fun PlayShuffleRow(
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+    modifier: Modifier = Modifier,
+    playContainer: Color = Maestro.colors.surfaceRaised,
+    playContent: Color = Maestro.colors.accent,
+) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        PillButton("Play", MaestroIcons.Play, onPlay, Modifier.weight(1f))
+        PillButton("Play", MaestroIcons.Play, onPlay, Modifier.weight(1f), playContainer, playContent)
         PillButton("Shuffle", MaestroIcons.Shuffle, onShuffle, Modifier.weight(1f))
     }
 }
@@ -114,8 +126,8 @@ fun TrackRow(
         modifier
             .fillMaxWidth()
             .clip(Radius.medium)
-            .pressable(onClick, pressedScale = 0.985f, highlight = Maestro.colors.hairline)
-            .padding(horizontal = 8.dp, vertical = if (showArtwork) 6.dp else 11.dp),
+            .pressable(onClick, pressedScale = 0.985f, highlight = Maestro.colors.hairline, shape = Radius.medium)
+            .padding(horizontal = 8.dp, vertical = if (showArtwork) 6.dp else 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (showArtwork) {
@@ -172,19 +184,16 @@ fun PlayingBars(isPlaying: Boolean, color: Color, modifier: Modifier = Modifier)
             animationSpec = infiniteRepeatable(tween(period), RepeatMode.Reverse),
         )
     }
-    val still = !isPlaying || Maestro.reduceMotion
+    val animate = isPlaying && !Maestro.reduceMotion
+    // Paused holds an uneven pose at half strength, so it never reads as an ellipsis.
+    val barColor = if (isPlaying) color else color.copy(alpha = 0.55f)
     Canvas(modifier.size(width = 14.dp, height = 12.dp)) {
         val barWidth = size.width / 5
         phases.forEachIndexed { i, phase ->
-            // Paused rests low; with reduced motion, playing holds a static, uneven pose.
-            val level = when {
-                !isPlaying -> 0.3f
-                still -> listOf(0.6f, 1f, 0.75f)[i]
-                else -> phase.value
-            }
+            val level = if (animate) phase.value else listOf(0.55f, 1f, 0.75f)[i]
             val h = size.height * level
             drawRoundRect(
-                color,
+                barColor,
                 topLeft = Offset(i * barWidth * 2, size.height - h),
                 size = Size(barWidth, h),
                 cornerRadius = CornerRadius(barWidth / 2),

@@ -96,6 +96,7 @@ fun PlayerSheet(
     sheet: PlayerSheetState,
     playerState: PlayerState,
     player: Player,
+    onOpenAlbum: (albumId: String) -> Unit,
     bottomInset: Dp,
     miniHeight: Dp,
     startInset: Dp,
@@ -169,6 +170,7 @@ fun PlayerSheet(
                 playerState = playerState,
                 player = player,
                 onCollapse = sheet::collapse,
+                onOpenAlbum = { onOpenAlbum(track.albumId) },
                 onArtPlaced = { coords ->
                     val root = sheetCoords.value ?: return@NowPlaying
                     val r = root.localBoundingBoxOf(coords)
@@ -279,7 +281,7 @@ private fun MiniPlayer(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    track.artist,
+                    "${track.artist} · ${track.albumTitle}",
                     style = Maestro.type.caption,
                     color = Maestro.colors.textSecondary,
                     maxLines = 1,
@@ -291,18 +293,23 @@ private fun MiniPlayer(
                 contentDescription = if (playerState.isPlaying) "Pause" else "Play",
                 onClick = player::togglePlayPause,
             )
+            Spacer(Modifier.width(4.dp))
             ControlButton(MaestroIcons.Next, contentDescription = "Next", onClick = player::skipToNext)
         }
+        // A visible track with a fill, inset inside the rounded corners, so it reads as progress.
         val accent = Maestro.colors.accent
+        val track = Maestro.colors.hairline
         val fraction = if (playerState.durationMs > 0) playerState.positionMs.toFloat() / playerState.durationMs else 0f
         Canvas(
             Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp)
+                .padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
                 .height(2.dp),
         ) {
-            drawRoundRect(accent, size = Size(size.width * fraction, size.height), cornerRadius = CornerRadius(size.height))
+            val radius = CornerRadius(size.height)
+            drawRoundRect(track, size = size, cornerRadius = radius)
+            drawRoundRect(accent, size = Size(size.width * fraction, size.height), cornerRadius = radius)
         }
     }
 }

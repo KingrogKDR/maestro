@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +41,8 @@ import com.maestro.player.PlayerState
 import com.maestro.player.RepeatMode
 import com.maestro.ui.components.ControlButton
 import com.maestro.ui.components.Scrubber
+import com.maestro.ui.components.pressable
+import com.maestro.ui.theme.Radius
 import com.maestro.ui.icons.MaestroIcons
 import com.maestro.ui.theme.Maestro
 import com.maestro.ui.theme.Motion
@@ -54,6 +59,7 @@ internal fun NowPlaying(
     playerState: PlayerState,
     player: Player,
     onCollapse: () -> Unit,
+    onOpenAlbum: () -> Unit,
     onArtPlaced: (LayoutCoordinates) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -74,7 +80,7 @@ internal fun NowPlaying(
                     ArtSlot(art, onArtPlaced)
                     Spacer(Modifier.width(48.dp))
                     Column(Modifier.widthIn(max = 440.dp).weight(1f, fill = false)) {
-                        TrackInfo(track.title, track.artist)
+                        TrackInfo(track.title, track.artist, track.albumTitle, onOpenAlbum)
                         Spacer(Modifier.height(24.dp))
                         Controls(playerState, player)
                     }
@@ -89,7 +95,7 @@ internal fun NowPlaying(
                     ArtSlot(art, onArtPlaced)
                     Spacer(Modifier.weight(1f))
                     Column(Modifier.widthIn(max = 440.dp)) {
-                        TrackInfo(track.title, track.artist)
+                        TrackInfo(track.title, track.artist, track.albumTitle, onOpenAlbum)
                         Spacer(Modifier.height(20.dp))
                         Controls(playerState, player)
                     }
@@ -127,11 +133,36 @@ private fun ArtSlot(size: Dp, onPlaced: (LayoutCoordinates) -> Unit) {
     Spacer(Modifier.size(size).onGloballyPositioned(onPlaced))
 }
 
+/** Song, then "Artist · Album"; the second line goes to the album, because the record comes first. */
 @Composable
-private fun TrackInfo(title: String, artist: String) {
+private fun TrackInfo(title: String, artist: String, album: String, onOpenAlbum: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Text(title, style = Maestro.type.title, color = OnTint, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(artist, style = Maestro.type.headline, color = OnTintSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(
+            Modifier
+                .offset(x = (-8).dp)
+                .clip(Radius.small)
+                .pressable(
+                    onOpenAlbum,
+                    pressedScale = 0.98f,
+                    highlight = OnTint.copy(alpha = 0.12f),
+                    onClickLabel = "Go to album",
+                    shape = Radius.small,
+                )
+                .heightIn(min = 48.dp)
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "$artist · $album",
+                style = Maestro.type.headline,
+                color = OnTintSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            Icon(MaestroIcons.ChevronRight, null, Modifier.padding(start = 2.dp).size(18.dp), tint = OnTintSecondary)
+        }
     }
 }
 

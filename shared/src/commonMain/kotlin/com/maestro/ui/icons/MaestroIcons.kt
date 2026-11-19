@@ -68,6 +68,18 @@ object MaestroIcons {
         icon("ChevronDown") { stroked(width = 2.2f) { moveTo(6f, 9.5f); lineTo(12f, 15f); lineTo(18f, 9.5f) } }
     }
 
+    /** Material-style back arrow: Android users read a bare chevron as "previous", not "back". */
+    val ArrowBack: ImageVector by lazy {
+        icon("ArrowBack") {
+            stroked(width = 2f) { moveTo(19.5f, 12f); lineTo(4.5f, 12f) }
+            stroked(width = 2f) { moveTo(11f, 5.5f); lineTo(4.5f, 12f); lineTo(11f, 18.5f) }
+        }
+    }
+
+    val ChevronRight: ImageVector by lazy {
+        icon("ChevronRight") { stroked(width = 2.2f) { moveTo(9f, 5f); lineTo(16f, 12f); lineTo(9f, 19f) } }
+    }
+
     val ChevronLeft: ImageVector by lazy {
         icon("ChevronLeft") { stroked(width = 2.2f) { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) } }
     }

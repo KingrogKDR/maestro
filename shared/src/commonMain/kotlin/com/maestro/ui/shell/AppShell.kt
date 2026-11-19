@@ -156,6 +156,10 @@ fun AppShell(viewModel: AppViewModel, navigator: Navigator) {
             sheet = sheet,
             playerState = playerState,
             player = viewModel.player,
+            onOpenAlbum = { albumId ->
+                sheet.collapse()
+                navigator.open(Destination.AlbumDetail(albumId))
+            },
             bottomInset = sheetBottomInset,
             miniHeight = miniHeight,
             startInset = if (wide) SidebarWidth + miniGap else miniGap,
@@ -295,7 +299,7 @@ private fun Sidebar(navigator: Navigator, statusTop: Dp) {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
+                    .height(48.dp)
                     .semantics { this.selected = selected }
                     .clip(RoundedCornerShape(10.dp))
                     .background(backing)
