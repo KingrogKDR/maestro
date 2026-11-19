@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -9,6 +10,15 @@ plugins {
 
 kotlin {
     jvm()
+    // Web build: lets friends open Maestro in a browser and lets Playwright drive the real UI.
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        outputModuleName = "maestro"
+        browser {
+            commonWebpackConfig { outputFileName = "maestro.js" }
+        }
+        binaries.executable()
+    }
     android {
        namespace = "com.maestro.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()

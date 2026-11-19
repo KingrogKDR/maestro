@@ -1,0 +1,11 @@
+{
+  "name": "maestro-design",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "shots": "bun run shots.ts"
+  },
+  "devDependencies": {
+    "playwright": "1"
+  }
+}
